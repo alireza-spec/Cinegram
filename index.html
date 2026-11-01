@@ -118,6 +118,7 @@ body.power-saving *{transition:none!important;animation:none!important}
 body.power-saving #chatBg{display:none}
 @media(min-width:761px){#main{padding-bottom:76px}#sidebar{padding-bottom:76px}}
 @media(max-width:760px){#bottomNav{left:8px;right:8px;transform:none;justify-content:space-around}#bottomNav button{padding:8px 10px}#fab{right:16px;bottom:84px}}
+.msg.selMsg{outline:2px solid var(--blue);outline-offset:2px}
 @media(max-width:760px){#sidebar{width:100%}#sidebar.hidden{display:none}#main.hidden{display:none}}
 </style>
 </head>
@@ -129,7 +130,7 @@ body.power-saving #chatBg{display:none}
 <label>Username</label><input id="authUser" placeholder="username">
 <label>Password</label><input id="authPass" type="password" placeholder="At least 8 characters">
 <button id="authGo" style="width:100%;margin-top:16px">Continue</button>
-<div id="authMsg" style="color:#f87171;font-size:13px;margin-top:10px"></div>
+<div id="authMsg" style="color:#f87171;font-size:13px;margin-top:10px"></div><button class="ghost" id="authRecBtn" style="width:100%;margin-top:10px">Recover with phrase (this device only)</button><div id="recBox" style="display:none;margin-top:10px"><label>Recovery phrase</label><input id="recInput" placeholder="Your 12-word phrase"><button id="recGo" style="width:100%;margin-top:10px">Recover account</button></div>
 <div id="savedAccounts" style="margin-top:16px"></div>
 </div>
 <div id="app" style="display:none">
@@ -820,7 +821,7 @@ function threadByKey(k){ var ts=allThreads(); for(var i=0;i<ts.length;i++){ if(t
 function groupMembersOf(t){ if(!t) return []; if(t.members) return t.members; var g=null; for(var i=0;i<GROUPS.length;i++){ if(GROUPS[i][0]===t.id) g=GROUPS[i]; } return g?g[2]:[]; }
 function chatMsgs(k){ if(!state.chats[k]) state.chats[k]=[]; return state.chats[k]; }
 function lastText(k){ var m=chatMsgs(k); return m.length?m[m.length-1].text:""; }
-var selectedKey=null, replyTarget=null, editingId=null, typingName="", rec=null, recChunks=[], recKind="voice";
+var selectedKey=null, replyTarget=null, editingId=null, typingName="", rec=null, recChunks=[], recKind="voice", selMsgs=[];
 function applyThemeLang(){ document.body.setAttribute("data-theme",state.theme||"midnight"); document.body.classList.toggle("power-saving",!!state.powerSaving); document.documentElement.dir=(state.lang==="fa"?"rtl":"ltr"); document.documentElement.lang=state.lang; var sb=document.getElementById("threadSearch"); if(sb) sb.placeholder=tr("search"); }
 function renderSidebar(){
 var tabs=[["all","All"],["personal","Personal"],["groups","Groups"],["saved","Saved"],["favorites","Favorites"],["archived","Archived"]];
@@ -838,7 +839,7 @@ if(state.folder==="favorites") inFolder=state.favorites.indexOf(t.id)>=0||state.
 if(state.folder==="archived") inFolder=state.archived.indexOf(k)>=0;
 if(state.folder==="archived"&&state.archived.indexOf(k)<0) inFolder=false;
 if(!inFolder) return;
-if(q && (t.title.toLowerCase().indexOf(q)<0) && (lastText(k).toLowerCase().indexOf(q)<0)) return;
+var histHit=false; if(q){ var _ms=chatMsgs(k); for(var _hi=0;_hi<_ms.length;_hi++){ if(_ms[_hi].text&&_ms[_hi].text.toLowerCase().indexOf(q)>=0){ histHit=true; break; } } } if(q && (t.title.toLowerCase().indexOf(q)<0) && (lastText(k).toLowerCase().indexOf(q)<0) && !histHit) return;
 var row=document.createElement("div"); row.className="thread"+(selectedKey===k?" sel":"");
 var fav=(state.favorites.indexOf(t.id)>=0||state.favorites.indexOf(k)>=0); var c=charByName(t.title); var init=(t.kind==="group"?"G":(c?c[2]:t.title.slice(0,1)));
 row.innerHTML=avatarHtml(t.title,init)+'<div style="flex:1;min-width:0"><b>'+esc(t.title)+(state.pinned.indexOf(k)>=0?" 📌":"")+(state.unread.indexOf(k)>=0?'<span class="unreadDot"></span>':"")+'</b>'+(WORKLABELS[t.title]?'<span class="workchip">'+esc(WORKLABELS[t.title])+'</span>':'')+'<small>'+esc(lastText(k)||t.desc||"")+'</small></div><button class="favBtn">'+(fav?"★":"☆")+'</button><button class="menuBtn">⋮</button>';
@@ -871,11 +872,12 @@ var c=charByName(t.title); var cav=document.getElementById("chatAvatar"); var ci
 document.getElementById("chatTitle").textContent=t.title;
 document.getElementById("chatSub").textContent=(t.kind==="group"?((groupMembersOf(t).length+1)+" members"+(WORKLABELS[t.title]?" · "+WORKLABELS[t.title]:"")):(WORKLABELS[t.title]||t.desc||""));
 document.getElementById("draftInput").value=state.drafts[k]||"";
-replyTarget=null; editingId=null; renderBanner(); renderChat(); renderSidebar(); if(typeof syncNav==="function") syncNav();
+selMsgs=[]; replyTarget=null; editingId=null; renderBanner(); renderChat(); renderSidebar(); if(typeof syncNav==="function") syncNav();
 }
 function saveDraft(){ if(selectedKey && !editingId){ state.drafts[selectedKey]=document.getElementById("draftInput").value; persist(); } }
 function renderBanner(){
 var b=document.getElementById("banner");
+if(selMsgs.length){ b.style.display="flex"; b.innerHTML="<span>"+selMsgs.length+" selected</span><span><button class='ghost' id='selFw'>Forward</button> <button class='ghost' id='selDel'>Delete</button> <button class='ghost' id='selCx'>✕</button></span>"; document.getElementById("selCx").onclick=function(){ selMsgs=[]; renderBanner(); renderChat(); }; document.getElementById("selDel").onclick=function(){ var ms=chatMsgs(selectedKey); state.chats[selectedKey]=ms.filter(function(x){ return selMsgs.indexOf(x.id)<0; }); selMsgs=[]; persist(); renderBanner(); renderChat(); renderSidebar(); }; document.getElementById("selFw").onclick=function(){ var ms=chatMsgs(selectedKey).filter(function(x){ return selMsgs.indexOf(x.id)>=0; }); openForwardList(ms); }; return; }
 if(editingId){ var m=findMsg(editingId); b.style.display="flex"; b.innerHTML="<span>Editing: "+esc(m?m.text:"")+"</span><button class='ghost' id='cancelEdit'>✕</button>"; document.getElementById("cancelEdit").onclick=function(){ editingId=null; if(selectedKey) state.drafts[selectedKey]=""; document.getElementById("draftInput").value=""; persist(); renderBanner(); }; }
 else if(replyTarget){ b.style.display="flex"; b.innerHTML="<span>Replying to: "+esc(replyTarget.text)+"</span><button class='ghost' id='cancelReply'>✕</button>"; document.getElementById("cancelReply").onclick=function(){ replyTarget=null; renderBanner(); }; }
 else { b.style.display="none"; b.innerHTML=""; }
@@ -886,7 +888,7 @@ if(!selectedKey) return; var t=threadByKey(selectedKey); var box=document.getEle
 var pinned=chatMsgs(selectedKey).filter(function(m){ return m.pinned; });
 if(pinned.length){ var pb=document.createElement("div"); pb.style.cssText="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px;font-size:13px"; pb.innerHTML="📌 Pinned: "+esc(pinned[pinned.length-1].text); box.appendChild(pb); }
 chatMsgs(selectedKey).forEach(function(m,mi){
-var isGroupMsg=(t&&t.kind==="group"&&m.role!=="user"&&m.speakerName&&!m.isSticker); var div=document.createElement("div"); div.className="msg"+(m.role==="user"?" me":"")+(m.isSticker?" sticker":""); div.id="msg-"+m.id;
+var isGroupMsg=(t&&t.kind==="group"&&m.role!=="user"&&m.speakerName&&!m.isSticker); var div=document.createElement("div"); div.className="msg"+(m.role==="user"?" me":"")+(m.isSticker?" sticker":"")+(selMsgs.indexOf(m.id)>=0?" selMsg":""); div.id="msg-"+m.id;
 var html="";
 if(m.isSticker){ var c=charByName(m.speakerName||""); html+='<div class="avatar" style="background:'+colorFor(m.speakerName||"")+'">'+esc(c?c[2]:(m.speakerName||"").slice(0,1))+'</div><p>'+esc(m.text)+'</p>'; }
 else {
@@ -901,15 +903,16 @@ if(m.reactions && m.reactions.length) html+='<div class="reacts">'+m.reactions.m
 html+='<div class="time">'+(m.editedAt?"edited • ":"")+new Date(m.createdAt||Date.now()).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})+(m.role==="user"?((function(){ for(var li=mi+1;li<chatMsgs(selectedKey).length;li++){ if(chatMsgs(selectedKey)[li].role!=="user") return '<span style="color:#5bb4f0"> ✓✓</span>'; } return " ✓"; })()):"")+'</div>';
 html+='<div class="tools"><button data-act="reply">'+tr("reply")+'</button><button data-act="copy">'+tr("copy")+'</button><button data-act="react">❤️</button><button data-act="pin">'+tr("pin")+'</button><button data-act="save">'+tr("save")+'</button><button data-act="translate">Translate</button><button data-act="forward">'+tr("forward")+'</button>';
 if(m.role==="user" && !m.isSticker) html+='<button data-act="edit">'+tr("edit")+'</button>';
-html+='<button data-act="delete">'+tr("delete")+'</button></div>';
+html+='<button data-act="delete">'+tr("delete")+'</button><button data-act="select">Select</button></div>';
 div.innerHTML=html;
-div.querySelectorAll("[data-act]").forEach(function(b){ b.onclick=function(){ messageAction(m,b.getAttribute("data-act")); }; });
+div.querySelectorAll("[data-act]").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); messageAction(m,b.getAttribute("data-act")); }; }); if(selMsgs.length){ div.onclick=function(){ var ix=selMsgs.indexOf(m.id); if(ix>=0) selMsgs.splice(ix,1); else selMsgs.push(m.id); renderBanner(); renderChat(); }; }
 if(isGroupMsg){ var wrap=document.createElement("div"); wrap.className="msgrow"; wrap.innerHTML=avatarHtml(m.speakerName); wrap.appendChild(div); box.appendChild(wrap); } else { box.appendChild(div); }
 });
 box.scrollTop=box.scrollHeight; var tl=document.getElementById("toLatest"); if(tl){ tl.style.display="none"; if(!tl._wired){ tl._wired=true; tl.onclick=function(){ box.scrollTop=box.scrollHeight; tl.style.display="none"; }; box.onscroll=function(){ tl.style.display=(box.scrollHeight-box.scrollTop-box.clientHeight>120)?"block":"none"; }; } }
 document.getElementById("typing").textContent=typingName?typingName+" "+tr("typing")+"…":"";
 }
 function messageAction(m,act){
+if(act==="select"){ if(selMsgs.indexOf(m.id)<0){ selMsgs.push(m.id); replyTarget=null; editingId=null; } renderBanner(); renderChat(); return; }
 if(act==="translate"){ translateMessage(m); return; }
 if(act==="copy"){ if(navigator.clipboard){ navigator.clipboard.writeText(m.text).then(function(){ toast(tr("msgCopied")); }); } else { toast("Clipboard is unavailable in this browser."); } return; }
 if(act==="reply"){ replyTarget=m; renderBanner(); document.getElementById("draftInput").focus(); return; }
@@ -926,6 +929,7 @@ document.getElementById("modalRoot").innerHTML=html; document.getElementById("fw
 var list=document.getElementById("fwList");
 allThreads().forEach(function(t){ var k=threadKey(t.kind,t.id); if(k===selectedKey) return; var b=document.createElement("button"); b.className="ghost"; b.style.cssText="width:100%;margin-top:6px;text-align:start"; b.textContent=t.title; b.onclick=function(){ var nm={id:uid(),role:"user",text:m.text,forwardedFrom:threadByKey(selectedKey)?threadByKey(selectedKey).title:"Cinegram",createdAt:Date.now()}; chatMsgs(k).push(nm); state.recent=state.recent||{}; state.recent[k]=Date.now(); persist(); closeModal(); openThread(k); toast("Forwarded to "+t.title); }; list.appendChild(b); });
 }
+function openForwardList(msgs){ if(!msgs.length) return; var html='<div class="modal"><div class="panel"><h2>'+tr("forwardTo")+'</h2><p style="color:var(--muted)">'+msgs.length+' messages</p><div id="fwList"></div><button class="ghost" style="width:100%;margin-top:10px" id="fwClose">Close</button></div></div>'; document.getElementById("modalRoot").innerHTML=html; document.getElementById("fwClose").onclick=closeModal; var list=document.getElementById("fwList"); var fromTitle=threadByKey(selectedKey)?threadByKey(selectedKey).title:"Cinegram"; allThreads().forEach(function(t){ var k=threadKey(t.kind,t.id); if(k===selectedKey) return; var b=document.createElement("button"); b.className="ghost"; b.style.cssText="width:100%;margin-top:6px;text-align:start"; b.textContent=t.title; b.onclick=function(){ msgs.forEach(function(m){ var nm={id:uid(),role:"user",text:m.text,forwardedFrom:fromTitle,createdAt:Date.now()}; chatMsgs(k).push(nm); }); state.recent=state.recent||{}; state.recent[k]=Date.now(); selMsgs=[]; persist(); closeModal(); openThread(k); toast("Forwarded to "+t.title); }; list.appendChild(b); }); }
 function isPersian(s){ return /[ء-ي]/.test(s||""); }
 function systemFor(name,persona,canon,groupNames){
 var g=groupNames&&groupNames.length?(" Group members you know: "+groupNames.join(", ")+"."):"";
@@ -989,7 +993,7 @@ return members[0];
 var idleTimer=null;
 function resetIdleTimer(){
 if(idleTimer) clearTimeout(idleTimer);
-var t=selectedKey?threadByKey(selectedKey):null; if(!t||t.kind!=="group") return;
+var t=selectedKey?threadByKey(selectedKey):null; if(!t||t.kind!=="group") return; var k0=selectedKey;
 idleTimer=setTimeout(groupIdleTurn,180000+Math.floor(Math.random()*180000));
 }
 async function groupIdleTurn(){
@@ -1001,12 +1005,12 @@ typingName=sp[0]; renderChat();
 try{
 var hist=historyFor(selectedKey,12); hist.push({role:"user",text:"Continue the group conversation naturally with the other members, in character, one short message."});
 var reply=await getAIReply(sp[0],sp[1],CANON[sp[0]]||"",groupMembersOf(t),hist);
-var nm={id:uid(),role:"assistant",speakerName:sp[0],speakerId:sp[0],text:reply,createdAt:Date.now()}; chatMsgs(selectedKey).push(nm); state.recent=state.recent||{}; state.recent[selectedKey]=Date.now(); persist(); renderChat(); renderSidebar();
+var nm={id:uid(),role:"assistant",speakerName:sp[0],speakerId:sp[0],text:reply,createdAt:Date.now()}; chatMsgs(k0).push(nm); state.recent=state.recent||{}; state.recent[k0]=Date.now(); if(selectedKey!==k0&&state.unread.indexOf(k0)<0) state.unread.push(k0); persist(); renderChat(); renderSidebar();
 }catch(e){ /* idle turn is best-effort; do not surface an error for a background continuation */ }
 typingName=""; renderChat(); resetIdleTimer();
 }
 async function sendMessage(){
-var t=threadByKey(selectedKey); if(!t||!me()) return;
+var t=threadByKey(selectedKey); if(!t||!me()) return; var k0=selectedKey;
 var input=document.getElementById("draftInput"); var text=input.value.trim();
 var pendingMedia=window.__pendingMedia||null;
 if(editingId){
@@ -1025,9 +1029,9 @@ typingName=speaker; renderChat();
 try{
 var hist=historyFor(selectedKey,14);
 var reply=await getAIReply(speaker,persona,canon,groupMembersOf(t),hist);
-var am={id:uid(),role:"assistant",speakerName:speaker,speakerId:speaker,text:reply,replyTo:replyText,createdAt:Date.now()}; chatMsgs(selectedKey).push(am); state.recent[selectedKey]=Date.now(); persist(); renderChat(); renderSidebar();
+var am={id:uid(),role:"assistant",speakerName:speaker,speakerId:speaker,text:reply,replyTo:replyText,createdAt:Date.now()}; chatMsgs(k0).push(am); state.recent[k0]=Date.now(); if(selectedKey!==k0&&state.unread.indexOf(k0)<0) state.unread.push(k0); persist(); renderChat(); renderSidebar();
 }catch(e){
-var errMsg={id:uid(),role:"assistant",speakerName:speaker,speakerId:speaker,text:"AI error: "+(e&&e.message?e.message:"Unknown error")+". Your message was saved; try again.",createdAt:Date.now(),isError:true}; chatMsgs(selectedKey).push(errMsg); persist(); renderChat(); toast("AI error: "+(e&&e.message?e.message:"Unknown error"));
+var errMsg={id:uid(),role:"assistant",speakerName:speaker,speakerId:speaker,text:"AI error: "+(e&&e.message?e.message:"Unknown error")+". Your message was saved; try again.",createdAt:Date.now(),isError:true}; chatMsgs(k0).push(errMsg); if(selectedKey!==k0&&state.unread.indexOf(k0)<0) state.unread.push(k0); persist(); renderChat(); toast("AI error: "+(e&&e.message?e.message:"Unknown error"));
 }
 typingName=""; renderChat(); resetIdleTimer();
 }
@@ -1218,7 +1222,7 @@ document.getElementById("auth").style.display="none"; document.getElementById("a
 }
 function showAuth(){
 document.getElementById("app").style.display="none"; var a=document.getElementById("auth"); a.style.display="block";
-var sa=document.getElementById("savedAccounts"); sa.innerHTML=""; if(state.users.length){ sa.innerHTML="<b>Accounts on this device</b>"; state.users.forEach(function(u){ var b=document.createElement("button"); b.className="ghost"; b.style.cssText="width:100%;margin-top:6px"; b.textContent=u.username; b.onclick=function(){ state.current=u.id; persist(); showApp(); }; sa.appendChild(b); }); }
+var rb=document.getElementById("recBox"); if(rb) rb.style.display="none"; var sa=document.getElementById("savedAccounts"); sa.innerHTML=""; if(state.users.length){ sa.innerHTML="<b>Accounts on this device</b>"; state.users.forEach(function(u){ var b=document.createElement("button"); b.className="ghost"; b.style.cssText="width:100%;margin-top:6px"; b.textContent=u.username; b.onclick=function(){ state.current=u.id; persist(); showApp(); }; sa.appendChild(b); }); }
 }
 var authMode="in";
 document.getElementById("tabIn").onclick=function(){ authMode="in"; document.getElementById("tabIn").className="on"; document.getElementById("tabUp").className=""; };
@@ -1238,6 +1242,9 @@ if(!found){ msg.textContent="Wrong username or password on this device."; return
 state.current=found.id; persist(); showApp();
 }
 };
+function normPhrase(p){ return (p||"").trim().toLowerCase().split(" ").filter(function(w){ return w; }).join(" "); }
+document.getElementById("authRecBtn").onclick=function(){ var b=document.getElementById("recBox"); b.style.display=(b.style.display==="none"?"block":"none"); };
+document.getElementById("recGo").onclick=function(){ var ph=normPhrase(document.getElementById("recInput").value); var msg=document.getElementById("authMsg"); var found=null; state.users.forEach(function(u){ if(u.recovery&&normPhrase(u.recovery)===ph) found=u; }); if(!found){ msg.textContent="No account on this device matches that phrase."; return; } msg.textContent=""; state.current=found.id; persist(); showApp(); };
 document.getElementById("btnSettings").onclick=openSettings;
 document.getElementById("btnDirectory").onclick=openDirectory;
 document.getElementById("btnNewGroup").onclick=openCreateGroup;
