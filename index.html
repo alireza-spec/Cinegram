@@ -2007,6 +2007,38 @@ document.getElementById("modalRoot").innerHTML=subPage("Notifications",html); wi
 document.getElementById("ntSound").onchange=function(){ state.msgSound=this.checked; persist(); };
 document.getElementById("ntBadge").onchange=function(){ state.unreadBadge=this.checked; persist(); renderSidebar(); };
 }
+function exportBackup(){
+var env={app:"cinegram",version:1,exportedAt:new Date().toISOString(),data:state};
+var js=JSON.stringify(env);
+var blob=new Blob([js],{type:"application/json"});
+var a=document.createElement("a");
+var d=new Date(); var ds=d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);
+a.href=URL.createObjectURL(blob); a.download="cinegram-backup-"+ds+".json";
+document.body.appendChild(a); a.click(); a.remove();
+setTimeout(function(){ URL.revokeObjectURL(a.href); },5000);
+toast("Backup downloaded.");
+}
+function importBackup(file){
+var rd=new FileReader();
+rd.onload=function(){
+var env=null;
+try{ env=JSON.parse(rd.result); }catch(e){ env=null; }
+if(!env||env.app!=="cinegram"||!env.data||!env.data.users||!(env.data.users instanceof Array)){
+toast("This file is not a Cinegram backup. Nothing was changed."); return;
+}
+var d=env.data; var nChats=d.chats?Object.keys(d.chats).length:0; var nMsg=0;
+Object.keys(d.chats||{}).forEach(function(k){ nMsg+=(d.chats[k]||[]).length; });
+var when=env.exportedAt?env.exportedAt.slice(0,10):"unknown date";
+var mv='<div class="modal"><div class="panel"><h2>Restore backup?</h2><p style="color:var(--muted)">From '+esc(when)+' · '+d.users.length+' accounts · '+nChats+' chats · '+nMsg+' messages.</p><p style="color:#ff5b5b">This replaces ALL current chats, accounts and settings in this browser. It cannot be undone.</p><button class="ghost" id="cfmImp" style="color:#ff5b5b">Replace and restore</button> <button class="ghost" id="cfmImpX">Cancel</button></div></div>';
+document.getElementById("modalRoot").innerHTML=mv;
+document.getElementById("cfmImpX").onclick=closeModal;
+document.getElementById("cfmImp").onclick=function(){
+try{ localStorage.setItem("cinegram-v1",JSON.stringify(d)); }catch(e){ toast("Restore failed: storage error."); return; }
+location.reload();
+};
+};
+rd.readAsText(file);
+}
 function openStorageSettings(){
 var js=JSON.stringify(state); var kb=Math.max(1,Math.round(js.length/1024)); var total=0, media=0; Object.keys(state.chats||{}).forEach(function(k){ (state.chats[k]||[]).forEach(function(m){ total++; if(m.mediaUrl) media++; }); });
 var html='<div class="setCard">';
@@ -2015,9 +2047,18 @@ html+='<div class="setItem" style="cursor:default"><span class="ti"><b>Chats</b>
 html+='<div class="setItem" style="cursor:default"><span class="ti"><b>Messages</b><small>Stored across all chats</small></span><span style="color:var(--muted)">'+total+'</span></div>';
 html+='<div class="setItem" style="cursor:default"><span class="ti"><b>Media messages</b><small>Photos, videos, audio and files</small></span><span style="color:var(--muted)">'+media+'</span></div>';
 html+='</div>';
+html+='<div class="setCard">';
+html+='<div class="setItem" id="stExportRow" style="cursor:pointer"><span class="ti"><b>Export backup</b><small>Download all chats, accounts and settings as one file</small></span><span style="color:var(--blue)">Download</span></div>';
+html+='<div class="setItem" id="stImportRow" style="cursor:pointer"><span class="ti"><b>Import backup</b><small>Replace everything here with a backup file</small></span><span style="color:var(--blue)">Choose file</span></div>';
+html+='</div>';
+html+='<p style="color:var(--muted);font-size:13px">Backups contain chats, accounts and settings. Attached media files themselves are not inside the backup: they are temporary browser links, so a restored chat keeps its text but not its photos, videos or files.</p>';
+html+='<input type="file" id="stImportFile" accept=".json,application/json" style="display:none">';
 html+='<p style="color:var(--muted);font-size:13px">Attached media does not survive a page reload: files are kept as temporary browser links, not uploaded anywhere.</p>';
 html+='<button class="ghost danger" id="stClear" style="width:100%;margin-top:10px;color:#ff5b5b">Clear all local data</button>';
 document.getElementById("modalRoot").innerHTML=subPage("Data and Storage",html); wireSubPage();
+document.getElementById("stExportRow").onclick=function(){ exportBackup(); };
+document.getElementById("stImportRow").onclick=function(){ document.getElementById("stImportFile").click(); };
+document.getElementById("stImportFile").onchange=function(){ if(this.files&&this.files[0]) importBackup(this.files[0]); };
 document.getElementById("stClear").onclick=function(){ var mv='<div class="modal"><div class="panel"><h2>Clear local data?</h2><p style="color:var(--muted)">This deletes all chats, accounts and settings in this browser. It cannot be undone.</p><button class="ghost" id="cfmClear" style="color:#ff5b5b">Clear everything</button> <button class="ghost" id="cfmCancel">Cancel</button></div></div>'; document.getElementById("modalRoot").innerHTML=mv; document.getElementById("cfmCancel").onclick=closeModal; document.getElementById("cfmClear").onclick=function(){ try{ localStorage.removeItem("cinegram-v1"); }catch(e){} location.reload(); }; };
 }
 function openFoldersPage(){
