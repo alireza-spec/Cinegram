@@ -1615,15 +1615,19 @@ if(key){
 try{ var r=""; if(serviceOf(key)) r=await callServiceAI(key,sys,historyMsgs,0.8); else r=await callCustomAI(key,sys,historyMsgs,0.8); r=stripThink(r); if(!r) throw new Error("AI returned an empty reply."); return r; }catch(e){ errs.push(e); }
 }
 var services=[]; var timeouts=0; var pref=state.aiService||"cloudflare"; services.push(pref); ["gonka","freemodel","literouter"].forEach(function(s){ if(services.indexOf(s)<0) services.push(s); });
+var bases=["https://cinegram-relay.nirir-egv4h2.workers.dev/chat","https://slltlpkjksoaffjztvfn.supabase.co/functions/v1/chat"];
+for(var bi=0;bi<bases.length;bi++){
+timeouts=0;
 for(var si=0;si<services.length;si++){
 try{
 var payload={character:{name:speakerName,persona:persona,canon:canon||""},groupMembers:groupNames||[],messages:historyMsgs,service:services[si]};
-var ctrl2=null; try{ ctrl2=new AbortController(); setTimeout(function(){ try{ ctrl2.abort(); }catch(e){} },60000); }catch(e){} var res=await fetch("https://cinegram-relay.nirir-egv4h2.workers.dev/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:ctrl2?ctrl2.signal:undefined});
+var ctrl2=null; try{ ctrl2=new AbortController(); setTimeout(function(){ try{ ctrl2.abort(); }catch(e){} },60000); }catch(e){} var res=await fetch(bases[bi],{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:ctrl2?ctrl2.signal:undefined});
 var data=null; try{ data=await res.json(); }catch(e){}
 if(!res.ok) throw new Error("Server AI error (HTTP "+res.status+").");
 if(!data||!data.reply||!data.reply.trim()) throw new Error("Server AI returned an empty reply.");
 var out=stripThink(data.reply.trim()); if(!out) throw new Error("Server AI returned an empty reply."); return out;
 }catch(e){ errs.push(e); if(e&&e.name==="AbortError"){ timeouts++; if(timeouts>=2) break; } }
+}
 }
 if(timeouts>=2) throw new Error("Could not reach the AI server. Check your connection, then tap this message to retry");
 if(errs.some(function(e){ return isNet(e); })) throw new Error("Could not reach the AI server. Check your connection, then tap this message to retry");
@@ -1719,7 +1723,7 @@ var sys="You are a translator. Translate the user's text into "+target+" only. O
 var hist=[{role:"user",text:m.text}];
 var out="";
 if(key){ try{ out=serviceOf(key)?await callServiceAI(key,sys,hist,0.2):await callCustomAI(key,sys,hist,0.2); }catch(e){ out=""; } }
-if(!out){ var ctrl3=null; try{ ctrl3=new AbortController(); setTimeout(function(){ try{ ctrl3.abort(); }catch(e){} },60000); }catch(e){} var res=await fetch("https://cinegram-relay.nirir-egv4h2.workers.dev/translate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target:target,text:m.text,service:state.aiService||"cloudflare"}),signal:ctrl3?ctrl3.signal:undefined}); var d=await res.json(); out=d.reply||""; }
+if(!out){ var tBases=["https://cinegram-relay.nirir-egv4h2.workers.dev/translate","https://slltlpkjksoaffjztvfn.supabase.co/functions/v1/translate"]; for(var tbi=0;tbi<tBases.length&&!out;tbi++){ try{ var ctrl3=null; try{ ctrl3=new AbortController(); setTimeout(function(){ try{ ctrl3.abort(); }catch(e){} },60000); }catch(e){} var res=await fetch(tBases[tbi],{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target:target,text:m.text,service:state.aiService||"cloudflare"}),signal:ctrl3?ctrl3.signal:undefined}); var d=await res.json(); out=d.reply||""; }catch(e){ out=""; } } }
 if(out){ m.translatedText=out.trim(); persist(); renderChat(); } else { toast("Translation returned empty text."); }
 }catch(e){ var mm=(e&&e.name==="AbortError")?"Timed out. Try again.":(e&&e.message?e.message:"Unknown error"); toast("Translation failed: "+mm); }
 }
