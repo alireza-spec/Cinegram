@@ -78,11 +78,19 @@ input,textarea,select{font:inherit;background:var(--input);color:var(--text);bor
 #mentionBox{position:absolute;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;max-height:200px;overflow:auto;z-index:40}
 #mentionBox div{padding:7px;border-radius:8px;cursor:pointer}
 #mentionBox div:hover{background:var(--panel2)}
-#auth{max-width:420px;margin:8vh auto;padding:24px;background:var(--panel);border:1px solid var(--line);border-radius:18px}
-#auth h1{text-align:center}
-.tabs{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
-.tabs button{background:transparent;color:var(--muted)}
-.tabs button.on{color:var(--text);font-weight:700}
+#auth{max-width:400px;margin:10vh auto;padding:32px 28px;background:var(--panel);border:1px solid var(--line);border-radius:20px;box-shadow:0 16px 48px rgba(0,0,0,.35)}
+#authLogo{width:72px;height:72px;border-radius:50%;background:var(--blue);color:#fff;font-size:34px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+#auth h1{font-size:26px}
+#auth label{display:block;text-align:start;font-size:13px;color:var(--muted);margin:12px 0 6px}
+#auth input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;color:var(--text);box-sizing:border-box}
+#authGo{width:100%;margin-top:18px;background:var(--blue);color:#fff;border:0;border-radius:12px;padding:13px;font-size:16px;font-weight:700}
+.acctRow{display:flex;align-items:center;gap:10px;width:100%;margin-top:8px;text-align:start;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:8px 12px;color:var(--text);font-size:15px}
+.acctRow .avatar{width:36px;height:36px;font-size:14px}
+@media(max-width:760px){#auth{margin:6vh 16px;padding:28px 22px}}
+#auth h1{text-align:center;margin:0}
+.tabs{display:flex;gap:4px;background:var(--panel2);border-radius:12px;padding:4px;margin-bottom:18px}
+.tabs button{background:transparent;color:var(--muted);flex:1;padding:9px;border-radius:9px;font-size:15px}
+.tabs button.on{color:#fff;font-weight:700;background:var(--blue)}
 label{font-size:13px;color:var(--muted);display:block;margin-top:10px}
 .pill{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:5px 10px;margin:3px;font-size:13px}
 #chatAvatar{width:42px;height:42px;font-size:16px}
@@ -140,14 +148,16 @@ body.power-saving #chatBg{display:none}
 </head>
 <body data-theme="midnight">
 <div id="auth" style="display:none">
+<div id="authLogo">✈</div>
 <h1>Cinegram</h1>
-<p style="text-align:center;color:var(--muted)">A little closer to your favorite worlds</p>
+<p style="text-align:center;color:var(--muted);margin:4px 0 20px">Log in to continue to Cinegram</p>
 <div class="tabs"><button id="tabIn" class="on">Sign in</button><button id="tabUp">Sign up</button></div>
 <label>Username</label><input id="authUser" placeholder="username">
 <label>Password</label><input id="authPass" type="password" placeholder="At least 8 characters">
-<button id="authGo" style="width:100%;margin-top:16px">Continue</button>
+<button id="authGo">Continue</button>
 <div id="authMsg" style="color:#f87171;font-size:13px;margin-top:10px"></div><button class="ghost" id="authRecBtn" style="width:100%;margin-top:10px">Recover with phrase (this device only)</button><div id="recBox" style="display:none;margin-top:10px"><label>Recovery phrase</label><input id="recInput" placeholder="Your 12-word phrase"><button id="recGo" style="width:100%;margin-top:10px">Recover account</button></div>
 <div id="savedAccounts" style="margin-top:16px"></div>
+<p style="text-align:center;color:var(--muted);font-size:12px;margin-top:20px">Demo sign-in — accounts live only in this browser.</p>
 </div>
 <div id="app" style="display:none">
 <aside id="sidebar">
@@ -168,8 +178,8 @@ body.power-saving #chatBg{display:none}
 </div>
 </main>
 </div>
-<div id="bottomNav"><button data-nav="chats" class="on">Chats</button><button data-nav="chars">Characters</button><button data-nav="settings">Settings</button><button data-nav="profile">Profile</button></div>
-<button id="fab" title="New">+</button>
+<div id="bottomNav" style="display:none"><button data-nav="chats" class="on">Chats</button><button data-nav="chars">Characters</button><button data-nav="settings">Settings</button><button data-nav="profile">Profile</button></div>
+<button id="fab" title="New" style="display:none">+</button>
 <div id="modalRoot"></div>
 <div id="toast"></div>
 <script>
@@ -1240,8 +1250,8 @@ function showApp(){
 document.getElementById("auth").style.display="none"; document.getElementById("app").style.display="flex"; applyThemeLang(); renderSidebar(); showWelcome();
 }
 function showAuth(){
-document.getElementById("app").style.display="none"; var a=document.getElementById("auth"); a.style.display="block";
-var rb=document.getElementById("recBox"); if(rb) rb.style.display="none"; var sa=document.getElementById("savedAccounts"); sa.innerHTML=""; if(state.users.length){ sa.innerHTML="<b>Accounts on this device</b>"; state.users.forEach(function(u){ var b=document.createElement("button"); b.className="ghost"; b.style.cssText="width:100%;margin-top:6px"; b.textContent=u.username; b.onclick=function(){ state.current=u.id; persist(); showApp(); }; sa.appendChild(b); }); }
+var nv=document.getElementById("bottomNav"); if(nv) nv.style.display="none"; var fb=document.getElementById("fab"); if(fb) fb.style.display="none"; document.getElementById("app").style.display="none"; var a=document.getElementById("auth"); a.style.display="block";
+var rb=document.getElementById("recBox"); if(rb) rb.style.display="none"; var sa=document.getElementById("savedAccounts"); sa.innerHTML=""; if(state.users.length){ sa.innerHTML="<b>Accounts on this device</b>"; state.users.forEach(function(u){ var b=document.createElement("button"); b.className="acctRow"; b.innerHTML='<span class="avatar" style="width:36px;height:36px;font-size:14px;background:'+colorFor(u.username)+'">'+esc((u.displayName||u.username).slice(0,1))+'</span><span>'+esc(u.displayName||u.username)+'</span><span style="color:var(--muted)">@'+esc(u.username)+'</span>'; b.onclick=function(){ state.current=u.id; persist(); showApp(); }; sa.appendChild(b); }); }
 }
 var authMode="in";
 document.getElementById("tabIn").onclick=function(){ authMode="in"; document.getElementById("tabIn").className="on"; document.getElementById("tabUp").className=""; };
