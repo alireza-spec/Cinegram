@@ -1412,7 +1412,7 @@ var savedState=load();
 var state=savedState||{users:[],current:null,lang:"en",theme:"midnight",folder:"all",chats:{},drafts:{},pinned:[],favorites:[],archived:[],muted:[],unread:[],stickers:[],customGroups:[],aiMode:"cloudflare",aiService:"cloudflare",aiKeys:[],activeKeyId:null};
 if(!state.aiMode) state.aiMode="cloudflare";
 if(!state.aiService) state.aiService="gonka";
-if(!state.aiKeys) state.aiKeys=[]; if(state.msgSize===undefined) state.msgSize=15; if(state.msgRadius===undefined) state.msgRadius=18; if(state.listLines===undefined) state.listLines=2; if(!state.swipeAction) state.swipeAction="pin"; if(state.animations===undefined) state.animations=true; if(state.msgSound===undefined) state.msgSound=false; if(state.unreadBadge===undefined) state.unreadBadge=true; if(state.inAppBrowser===undefined) state.inAppBrowser=false; if(state.tapNext===undefined) state.tapNext=true; if(!state.wallpaper) state.wallpaper="avatar"; if(!state.chatWallpapers) state.chatWallpapers={}; if(!state.scheduled) state.scheduled=[]; if(!state.customFolders) state.customFolders=[]; if(!state.mutedUntil) state.mutedUntil={}; if(state.appPasscode===undefined) state.appPasscode=null; if(!state.customChars) state.customChars=[]; if(!state.liveGroups) state.liveGroups={}; (state.customChars||[]).forEach(function(c){ if(c.photo&&!AVATARS[c.name]) AVATARS[c.name]=c.photo; }); Object.keys(state.chats||{}).forEach(function(k){ (state.chats[k]||[]).forEach(function(m){ if(m.mediaUrl&&m.mediaUrl.indexOf("blob:")===0){ m.mediaUrl=null; m.mediaGone=true; } }); }); if(!state.blocked) state.blocked=[]; if(!state.unreadCounts) state.unreadCounts={};
+if(!state.aiKeys) state.aiKeys=[]; if(state.msgSize===undefined) state.msgSize=15; if(state.msgRadius===undefined) state.msgRadius=18; if(state.listLines===undefined) state.listLines=2; if(!state.swipeAction) state.swipeAction="pin"; if(state.animations===undefined) state.animations=true; if(state.msgSound===undefined) state.msgSound=false; if(state.unreadBadge===undefined) state.unreadBadge=true; if(state.inAppBrowser===undefined) state.inAppBrowser=false; if(state.tapNext===undefined) state.tapNext=true; if(!state.wallpaper) state.wallpaper="avatar"; if(!state.chatWallpapers) state.chatWallpapers={}; if(!state.scheduled) state.scheduled=[]; if(!state.customFolders) state.customFolders=[]; if(!state.mutedUntil) state.mutedUntil={}; if(state.appPasscode===undefined) state.appPasscode=null; if(!state.customChars) state.customChars=[]; if(!state.liveGroups) state.liveGroups={}; if(!state.liveOff) state.liveOff={}; (state.customChars||[]).forEach(function(c){ if(c.photo&&!AVATARS[c.name]) AVATARS[c.name]=c.photo; }); Object.keys(state.chats||{}).forEach(function(k){ (state.chats[k]||[]).forEach(function(m){ if(m.mediaUrl&&m.mediaUrl.indexOf("blob:")===0){ m.mediaUrl=null; m.mediaGone=true; } }); }); if(!state.blocked) state.blocked=[]; if(!state.unreadCounts) state.unreadCounts={};
 if(!state.cfDefaultDone){ state.aiService="cloudflare"; state.cfDefaultDone=true; persist(); }
 function persist(){ try{ localStorage.setItem("cinegram-v1",JSON.stringify(state)); }catch(e){} }
 function toast(msg){ var t=document.getElementById("toast"); t.textContent=msg; t.style.display="block"; setTimeout(function(){ t.style.display="none"; },2600); }
@@ -1494,7 +1494,7 @@ IC.trash='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="cu
 IC.block='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/></svg>';
 function closeDropMenu(){ ["dropBack","dropMenu"].forEach(function(id){ var el=document.getElementById(id); if(el) el.remove(); }); }
 function openDropMenu(items,x,y){ closeDropMenu(); var back=document.createElement("div"); back.id="dropBack"; back.onclick=closeDropMenu; document.body.appendChild(back); var box=document.createElement("div"); box.id="dropMenu"; var html=""; items.forEach(function(it,ix){ html+='<button class="dropItem'+(it.danger?" danger":"")+'" data-i="'+ix+'"><span class="dropIc">'+it.icon+'</span><span>'+it.label+'</span></button>'; }); box.innerHTML=html; document.body.appendChild(box); box.querySelectorAll(".dropItem").forEach(function(b){ b.onclick=function(){ var it=items[+b.getAttribute("data-i")]; closeDropMenu(); it.fn(); }; }); var r=box.getBoundingClientRect(); var left=Math.min(x,window.innerWidth-r.width-12); var top=Math.min(y,window.innerHeight-r.height-12); box.style.left=Math.max(12,left)+"px"; box.style.top=Math.max(12,top)+"px"; }
-function goChatList(){ closeModal(); closeDropMenu(); selectedKey=null; document.getElementById("chatArea").style.display="none"; if(window.innerWidth<=760){ document.getElementById("welcome").style.display="none"; document.getElementById("sidebar").classList.remove("hidden"); document.getElementById("main").classList.add("hidden"); } else { showWelcome(); } renderSidebar(); if(typeof syncNav==="function") syncNav(); }
+function goChatList(){ leaveLive(); closeModal(); closeDropMenu(); selectedKey=null; document.getElementById("chatArea").style.display="none"; if(window.innerWidth<=760){ document.getElementById("welcome").style.display="none"; document.getElementById("sidebar").classList.remove("hidden"); document.getElementById("main").classList.add("hidden"); } else { showWelcome(); } renderSidebar(); if(typeof syncNav==="function") syncNav(); }
 function isMutedKey(k){ if(state.muted.indexOf(k)<0) return false; var u=(state.mutedUntil||{})[k]; if(u===undefined||u===0) return true; if(u<=Date.now()){ state.muted=state.muted.filter(function(x){ return x!==k; }); if(state.mutedUntil) delete state.mutedUntil[k]; persist(); return false; } return true; }
 function unmuteKey(k){ state.muted=state.muted.filter(function(x){ return x!==k; }); if(state.mutedUntil) delete state.mutedUntil[k]; persist(); }
 function openMutePicker(k,after){ var L=state.lang==="fa"; var html='<div class="modal"><div class="panel"><h2>'+(L?"بی‌صدا تا کی؟":"Mute for how long?")+'</h2>'; var opts=[[3600000,L?"۱ ساعت":"1 hour"],[28800000,L?"۸ ساعت":"8 hours"],[172800000,L?"۲ روز":"2 days"],[0,L?"برای همیشه":"Forever"]]; opts.forEach(function(o){ html+='<button class="ghost" style="width:100%;margin-top:8px" data-mutefor="'+o[0]+'">'+o[1]+'</button>'; }); html+='<button class="ghost" style="width:100%;margin-top:8px" id="mpX">'+(L?"لغو":"Cancel")+'</button></div></div>'; document.getElementById("modalRoot").innerHTML=html; document.getElementById("mpX").onclick=closeModal; document.querySelectorAll("[data-mutefor]").forEach(function(b){ b.onclick=function(){ var ms=+b.getAttribute("data-mutefor"); if(state.muted.indexOf(k)<0) state.muted.push(k); if(!state.mutedUntil) state.mutedUntil={}; state.mutedUntil[k]=ms===0?0:(Date.now()+ms); persist(); closeModal(); if(after) after(); }; }); }
@@ -1516,9 +1516,9 @@ openDropMenu(items,xx,yy);
 function toggleList(field,val,on){ var arr=state[field]; var i=arr.indexOf(val); if(on===true && i<0) arr.push(val); if(on===false && i>=0) arr.splice(i,1); if(on===undefined){ if(i>=0) arr.splice(i,1); else arr.push(val); } }
 function clearThread(k,remove){ state.chats[k]=[]; if(remove){ ["pinned","favorites","archived","muted","unread"].forEach(function(f){ var i=state[f].indexOf(k); if(i>=0) state[f].splice(i,1); }); if(state.mutedUntil) delete state.mutedUntil[k]; if(state.liveGroups) delete state.liveGroups[k]; var i2=state.favorites.indexOf(k.split(":")[1]); if(i2>=0) state.favorites.splice(i2,1); toast(tr("chatDeleted")); } else { toast(tr("histCleared")); } persist(); }
 function closeModal(){ document.getElementById("modalRoot").innerHTML=""; }
-function showWelcome(){ document.getElementById("welcome").style.display="flex"; document.getElementById("chatArea").style.display="none"; document.getElementById("sidebar").classList.remove("hidden"); if(window.innerWidth<=760){ document.getElementById("main").classList.add("hidden"); } else { document.getElementById("main").classList.remove("hidden"); } if(typeof syncNav==="function") syncNav(); }
+function showWelcome(){ leaveLive(); document.getElementById("welcome").style.display="flex"; document.getElementById("chatArea").style.display="none"; document.getElementById("sidebar").classList.remove("hidden"); if(window.innerWidth<=760){ document.getElementById("main").classList.add("hidden"); } else { document.getElementById("main").classList.remove("hidden"); } if(typeof syncNav==="function") syncNav(); }
 function openThread(k){
-saveDraft();
+leaveLive(); saveDraft();
 var t=threadByKey(k); if(!t) return; selectedKey=k; state.unread=state.unread.filter(function(x){ return x!==k; }); if(state.unreadCounts) delete state.unreadCounts[k]; persist();
 document.getElementById("welcome").style.display="none"; var ca=document.getElementById("chatArea"); ca.style.display="flex";
 document.getElementById("main").classList.remove("hidden"); if(window.innerWidth<=760){ document.getElementById("sidebar").classList.add("hidden"); document.getElementById("btnBack").style.display="inline-block"; }
@@ -1703,7 +1703,7 @@ typingName=speaker; renderChat();
 try{
 var hist=historyFor(selectedKey,14);
 var reply=await getAIReply(speaker,persona,canon,groupMembersOf(t),hist);
-var am={id:uid(),role:"assistant",speakerName:speaker,speakerId:speaker,text:reply,replyTo:replyText,replyToId:replyId,replyToName:replyName,createdAt:Date.now()}; if(t.kind==="group"){ am.replyTo=userMsg.text; am.replyToId=userMsg.id; am.replyToName=me()?me().username:"You"; } chatMsgs(k0).push(am); if(t.kind==="group") charReact(userMsg,speaker,reply); state.recent[k0]=Date.now(); if(selectedKey!==k0){ if(state.unread.indexOf(k0)<0) state.unread.push(k0); state.unreadCounts[k0]=(state.unreadCounts[k0]||0)+1; } if(state.msgSound&&(selectedKey!==k0||document.hidden)) playMsgSound(); persist(); renderChat(); renderSidebar();
+var am={id:uid(),role:"assistant",speakerName:speaker,speakerId:speaker,text:reply,replyTo:replyText,replyToId:replyId,replyToName:replyName,createdAt:Date.now()}; if(t.kind==="group"){ am.replyTo=userMsg.text; am.replyToId=userMsg.id; am.replyToName=me()?me().username:"You"; } chatMsgs(k0).push(am); if(t.kind==="group") charReact(userMsg,speaker,reply); state.recent[k0]=Date.now(); if(selectedKey!==k0){ if(state.unread.indexOf(k0)<0) state.unread.push(k0); state.unreadCounts[k0]=(state.unreadCounts[k0]||0)+1; } if(state.msgSound&&(selectedKey!==k0||document.hidden)) playMsgSound(); persist(); if(t.kind==="group"&&isLiveEnabled(k0)&&!isLiveOn(k0)&&!liveTimer){ if(!state.liveGroups) state.liveGroups={}; state.liveGroups[k0]={on:true,turns:0}; persist(); liveKey=k0; liveTimer=setTimeout(function(){ liveStep(k0); },8000+Math.floor(Math.random()*7000)); } renderChat(); renderSidebar();
 }catch(e){
 var errMsg={id:uid(),role:"assistant",speakerName:speaker,speakerId:speaker,text:"AI error: "+(e&&e.message?e.message:"Unknown error")+". Your message was saved; try again.",createdAt:Date.now(),isError:true}; chatMsgs(k0).push(errMsg); if(selectedKey!==k0&&state.unread.indexOf(k0)<0) state.unread.push(k0); persist(); renderChat(); toast("AI error: "+(e&&e.message?e.message:"Unknown error"));
 }
@@ -1748,12 +1748,14 @@ if(!dup) tm.reactions.push({userId:sp,emoji:em});
 }
 var liveTimer=null; var liveKey=null;
 function isLiveOn(k){ var l=(state.liveGroups||{})[k]; return !!(l&&l.on); }
-function setLive(k,on){ if(!state.liveGroups) state.liveGroups={}; if(on){ state.liveGroups[k]={on:true,turns:0}; } else { delete state.liveGroups[k]; } persist(); if(liveTimer){ clearTimeout(liveTimer); liveTimer=null; } liveKey=null; if(on){ liveKey=k; liveTimer=setTimeout(function(){ liveStep(k); },8000); } }
-function pokeLive(){ if(!selectedKey||!isLiveOn(selectedKey)||liveTimer) return; var t=threadByKey(selectedKey); if(!t||t.kind!=="group") return; liveKey=selectedKey; liveTimer=setTimeout(function(){ liveStep(selectedKey); },8000); }
+function isLiveEnabled(k){ var t=threadByKey(k); return !!(t&&t.kind==="group"&&!(state.liveOff&&state.liveOff[k])); }
+function leaveLive(){ if(liveTimer){ clearTimeout(liveTimer); liveTimer=null; } typingName=""; }
+function setLive(k,on){ if(!state.liveGroups) state.liveGroups={}; if(!state.liveOff) state.liveOff={}; if(on){ delete state.liveOff[k]; state.liveGroups[k]={on:true,turns:0}; } else { state.liveOff[k]=true; delete state.liveGroups[k]; } persist(); if(liveTimer){ clearTimeout(liveTimer); liveTimer=null; } liveKey=null; if(on){ liveKey=k; liveTimer=setTimeout(function(){ liveStep(k); },8000); } }
+function pokeLive(){ if(!selectedKey||!isLiveEnabled(selectedKey)||!isLiveOn(selectedKey)||liveTimer) return; var t=threadByKey(selectedKey); if(!t||t.kind!=="group") return; liveKey=selectedKey; liveTimer=setTimeout(function(){ liveStep(selectedKey); },8000); }
 function liveStep(k){
 liveTimer=null;
 var t=threadByKey(k);
-if(!isLiveOn(k)||!t||t.kind!=="group") return;
+if(!isLiveOn(k)||!t||t.kind!=="group"||selectedKey!==k) return;
 var di=document.getElementById("draftInput");
 if(isMutedKey(k)||document.visibilityState!=="visible"||typingName||(di&&(di.value||"").trim())){ liveTimer=setTimeout(function(){ liveStep(k); },20000); return; }
 var prevs=chatMsgs(k).slice().reverse().find(function(x){ return x.role==="assistant"&&x.speakerName&&!x.isError; });
@@ -1767,17 +1769,15 @@ var hist=historyFor(k,12); var la=-1; for(var hi=0;hi<hist.length;hi++){ if(hist
 var instr=prevs?("Continue the conversation between the characters. Reply directly to "+prevs.speakerName+"'s message, in character, one short message. Address them by name when natural; you may agree, disagree, or build on what they said. Do not address or answer the user; treat any user messages as background only."):"Start a conversation with the other members, in character, one short message.";
 hist.push({role:"user",text:instr});
 var reply=await getAIReply(sp[0],sp[1],CANON[sp[0]]||"",groupMembersOf(t),hist);
-if(!isLiveOn(k)){ typingName=""; renderChat(); return; }
+if(!isLiveOn(k)||selectedKey!==k){ typingName=""; renderChat(); return; }
 var nm={id:uid(),role:"assistant",speakerName:sp[0],speakerId:sp[0],text:reply,createdAt:Date.now()};
 if(prevs){ nm.replyToId=prevs.id; nm.replyToName=prevs.speakerName; nm.replyTo=prevs.text; }
 chatMsgs(k).push(nm); if(prevs) charReact(prevs,sp[0],reply); state.recent=state.recent||{}; state.recent[k]=Date.now();
-if(selectedKey!==k){ if(state.unread.indexOf(k)<0) state.unread.push(k); state.unreadCounts[k]=(state.unreadCounts[k]||0)+1; }
 lg.turns=(lg.turns||0)+1; persist(); renderChat(); renderSidebar();
 
-if(selectedKey!==k){ typingName=""; renderChat(); return; }
 liveTimer=setTimeout(function(){ liveStep(k); },8000+Math.floor(Math.random()*7000));
 }catch(e){
-setLive(k,false);
+delete state.liveGroups[k]; persist(); if(liveTimer){ clearTimeout(liveTimer); liveTimer=null; } liveKey=null;
 }
 typingName=""; renderChat();
 })();
@@ -2297,7 +2297,7 @@ var items=[
 {icon:IC.unread,label:"Mark unread",fn:function(){ if(state.unread.indexOf(k)<0) state.unread.push(k); tail(); }},
 {icon:IC.clock,label:"Clear history",fn:function(){ var mv='<div class="modal"><div class="panel"><h2>Clear history?</h2><p style="color:var(--muted)">All messages in this chat will be deleted.</p><button class="ghost" id="cfmClr" style="color:#ff5b5b">Clear</button> <button class="ghost" id="cfmClrX">Cancel</button></div></div>'; document.getElementById("modalRoot").innerHTML=mv; document.getElementById("cfmClrX").onclick=closeModal; document.getElementById("cfmClr").onclick=function(){ state.chats[k]=[]; persist(); closeModal(); renderChat(); renderSidebar(); }; }},
 {icon:IC.trash,label:"Delete chat",danger:true,fn:function(){ var mv2='<div class="modal"><div class="panel"><h2>Delete chat?</h2><p style="color:var(--muted)">'+esc(t.title)+'</p><button class="ghost" id="cfmDel2" style="color:#ff5b5b">Delete</button> <button class="ghost" id="cfmDel2X">Cancel</button></div></div>'; document.getElementById("modalRoot").innerHTML=mv2; document.getElementById("cfmDel2X").onclick=closeModal; document.getElementById("cfmDel2").onclick=function(){ clearThread(k,true); persist(); closeModal(); selectedKey=null; showWelcome(); renderSidebar(); }; }}];
-if(t.kind==="group"){ items.push({icon:IC.chat,label:(isLiveOn(k)?"Stop live discussion":"Start live discussion"),fn:function(){ var on=!isLiveOn(k); setLive(k,on); toast(on?(state.lang==="fa"?"گفتگوی زنده شروع شد.":"Live discussion started."):(state.lang==="fa"?"گفتگوی زنده متوقف شد.":"Live discussion stopped.")); tail(); }}); }
+if(t.kind==="group"){ items.push({icon:IC.chat,label:(isLiveEnabled(k)?"Stop live discussion":"Start live discussion"),fn:function(){ var on=!isLiveEnabled(k); setLive(k,on); toast(on?(state.lang==="fa"?"گفتگوی زنده شروع شد.":"Live discussion started."):(state.lang==="fa"?"گفتگوی زنده متوقف شد.":"Live discussion stopped.")); tail(); }}); }
 var xx=e&&e.clientX!==undefined?e.clientX:window.innerWidth-12;
 var yy=e&&e.clientY!==undefined?e.clientY+8:64;
 openDropMenu(items,xx,yy); }
