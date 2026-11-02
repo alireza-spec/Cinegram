@@ -1,4 +1,4 @@
-var CACHE = "cinegram-v20";
+var CACHE = "cinegram-v21";
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) {
     return c.addAll(["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"]);
