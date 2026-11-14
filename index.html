@@ -2112,7 +2112,7 @@ if(replyText){ var rp=replyText.trim().toLowerCase(); for(var i=0;i<members.leng
 if(lastText){ var m=lastText.match(/@([\p{L}\p{N}_-]+)/u); if(m){ var q=m[1].toLowerCase(); for(var j=0;j<members.length;j++){ if(members[j][0].toLowerCase().indexOf(q)>=0||(HANDLES[members[j][0]]||"").toLowerCase()==="@"+q) return members[j]; } } }
 var prev=chatMsgs(selectedKey).slice().reverse().find(function(x){ return x.role==="assistant"&&x.speakerName; });
 if(lastText){ var lt=lastText.toLowerCase(); for(var k3=0;k3<members.length;k3++){ var nm3=members[k3][0].toLowerCase(); if(nm3.length>=3&&lt.indexOf(nm3)>=0&&(forUser||!prev||members[k3][0]!==prev.speakerName)) return members[k3]; } }
-if(forUser){ var lt2=(lastText||"").toLowerCase(); for(var k5=0;k5<members.length;k5++){ var toks=members[k5][0].toLowerCase().split(" "); for(var k6=0;k6<toks.length;k6++){ var tk=toks[k6]; if(tk.length<3) continue; var ix=lt2.indexOf(tk); while(ix>=0){ var bb=ix===0?" ":lt2[ix-1]; var aa=ix+tk.length>=lt2.length?" ":lt2[ix+tk.length]; if(!((bb>="a"&&bb<="z")||(bb>="0"&&bb<="9"))&&!((aa>="a"&&aa<="z")||(aa>="0"&&aa<="9"))) return members[k5]; ix=lt2.indexOf(tk,ix+1); } } } } if(forUser&&prev){ for(var k4=0;k4<members.length;k4++){ if(members[k4][0]===prev.speakerName) return members[k4]; } } var pool=members.filter(function(c){ return !prev||c[0]!==prev.speakerName; });
+if(forUser){ var lt2=(lastText||"").toLowerCase(); for(var k5=0;k5<members.length;k5++){ var toks=members[k5][0].toLowerCase().split(" "); for(var k6=0;k6<toks.length;k6++){ var tk=toks[k6]; if(tk.length<3) continue; var ix=lt2.indexOf(tk); while(ix>=0){ var bb=ix===0?" ":lt2[ix-1]; var aa=ix+tk.length>=lt2.length?" ":lt2[ix+tk.length]; if(!((bb>="a"&&bb<="z")||(bb>="0"&&bb<="9"))&&!((aa>="a"&&aa<="z")||(aa>="0"&&aa<="9"))) return members[k5]; ix=lt2.indexOf(tk,ix+1); } } } } var pool=members.filter(function(c){ return !prev||c[0]!==prev.speakerName; });
 if(!pool.length) pool=members;
 return pool[Math.floor(Math.random()*pool.length)];
 }
@@ -2120,7 +2120,7 @@ var idleTimer=null;
 function resetIdleTimer(){
 if(idleTimer) clearTimeout(idleTimer);
 var t=selectedKey?threadByKey(selectedKey):null; if(!t||t.kind!=="group") return; var k0=selectedKey;
-idleTimer=setTimeout(groupIdleTurn,180000+Math.floor(Math.random()*180000));
+idleTimer=setTimeout(groupIdleTurn,120000+Math.floor(Math.random()*120000));
 }
 async function groupIdleTurn(){
 var t=selectedKey?threadByKey(selectedKey):null; if(!t||t.kind!=="group") return;
@@ -2130,9 +2130,9 @@ if((document.getElementById("draftInput").value||"").trim()) { resetIdleTimer();
 var sp=pickGroupSpeaker(t,"",""); if(!sp) return;
 typingName=sp[0]; renderChat();
 try{
-var hist=historyFor(selectedKey,12); hist.push({role:"user",text:"Continue the group conversation naturally with the other members, in character, one short message."});
+var hist=historyFor(selectedKey,12); hist.push({role:"user",text:"Continue the group conversation naturally with the other members, in character, one short message. Stay on the current topic and react to what was just said."});
 var reply=await getAIReply(sp[0],sp[1],CANON[sp[0]]||"",groupMembersOf(t),hist);
-var nm={id:uid(),role:"assistant",speakerName:sp[0],speakerId:sp[0],text:reply,createdAt:Date.now()}; chatMsgs(k0).push(nm); state.recent=state.recent||{}; state.recent[k0]=Date.now(); if(selectedKey!==k0){ if(state.unread.indexOf(k0)<0) state.unread.push(k0); state.unreadCounts[k0]=(state.unreadCounts[k0]||0)+1; } if(state.msgSound&&(selectedKey!==k0||document.hidden)) playMsgSound(); notifyReply(k0, t.title, sp[0]+": "+reply); persist(); renderChat(); renderSidebar();
+var nm={id:uid(),role:"assistant",speakerName:sp[0],speakerId:sp[0],text:reply,createdAt:Date.now()}; var prevI=chatMsgs(k0).slice().reverse().find(function(x){ return x.role==="assistant"&&x.speakerName&&!x.isError; }); if(prevI&&Math.random()<0.4){ nm.replyTo=prevI.text; nm.replyToId=prevI.id; nm.replyToName=prevI.speakerName; } chatMsgs(k0).push(nm); state.recent=state.recent||{}; state.recent[k0]=Date.now(); if(selectedKey!==k0){ if(state.unread.indexOf(k0)<0) state.unread.push(k0); state.unreadCounts[k0]=(state.unreadCounts[k0]||0)+1; } if(state.msgSound&&(selectedKey!==k0||document.hidden)) playMsgSound(); notifyReply(k0, t.title, sp[0]+": "+reply); persist(); renderChat(); renderSidebar();
 }catch(e){ /* idle turn is best-effort; do not surface an error for a background continuation */ }
 typingName=""; renderChat(); resetIdleTimer();
 }
@@ -2158,7 +2158,7 @@ if(userMsg.voice&&_voiceFile){ var _vt=await transcribeVoice(_voiceFile); if(_vt
 try{
 var hist=historyFor(selectedKey,14);
 var reply=await getAIReply(speaker,persona,canon,groupMembersOf(t),hist);
-var am={id:uid(),role:"assistant",speakerName:speaker,speakerId:speaker,text:reply,replyTo:replyText,replyToId:replyId,replyToName:replyName,createdAt:Date.now()}; if(t.kind==="group"){ am.replyTo=userMsg.text; am.replyToId=userMsg.id; am.replyToName=me()?me().username:"You"; } chatMsgs(k0).push(am); chatMsgs(k0).forEach(function(x){ if(x.role==="user") x.pending=false; }); if(t.kind==="group") charReact(userMsg,speaker,reply); state.recent[k0]=Date.now(); if(selectedKey!==k0){ if(state.unread.indexOf(k0)<0) state.unread.push(k0); state.unreadCounts[k0]=(state.unreadCounts[k0]||0)+1; } if(state.msgSound&&(selectedKey!==k0||document.hidden)) playMsgSound(); notifyReply(k0, t.kind==="group"?t.title:speaker, t.kind==="group"?(speaker+": "+reply):reply); persist(); if(t.kind==="group"&&isLiveEnabled(k0)&&!isLiveOn(k0)&&!liveTimer){ if(!state.liveGroups) state.liveGroups={}; state.liveGroups[k0]={on:true,turns:0}; persist(); liveKey=k0; liveTimer=setTimeout(function(){ liveStep(k0); },8000+Math.floor(Math.random()*7000)); } renderChat(); renderSidebar();
+var am={id:uid(),role:"assistant",speakerName:speaker,speakerId:speaker,text:reply,replyTo:replyText,replyToId:replyId,replyToName:replyName,createdAt:Date.now()}; if(t.kind==="group"){ am.replyTo=userMsg.text; am.replyToId=userMsg.id; am.replyToName=me()?me().username:"You"; } chatMsgs(k0).push(am); chatMsgs(k0).forEach(function(x){ if(x.role==="user") x.pending=false; }); if(t.kind==="group") charReact(userMsg,speaker,reply); state.recent[k0]=Date.now(); if(selectedKey!==k0){ if(state.unread.indexOf(k0)<0) state.unread.push(k0); state.unreadCounts[k0]=(state.unreadCounts[k0]||0)+1; } if(state.msgSound&&(selectedKey!==k0||document.hidden)) playMsgSound(); notifyReply(k0, t.kind==="group"?t.title:speaker, t.kind==="group"?(speaker+": "+reply):reply); persist(); if(t.kind==="group"&&isLiveEnabled(k0)&&!isLiveOn(k0)&&!liveTimer){ if(!state.liveGroups) state.liveGroups={}; state.liveGroups[k0]={on:true,turns:0}; persist(); liveKey=k0; liveTimer=setTimeout(function(){ liveStep(k0); },4000+Math.floor(Math.random()*3000)); } renderChat(); renderSidebar();
 }catch(e){
 var errMsg={id:uid(),role:"assistant",speakerName:speaker,speakerId:speaker,text:"AI error: "+(e&&e.message?e.message:"Unknown error")+". Your message was saved; try again.",createdAt:Date.now(),isError:true}; chatMsgs(k0).push(errMsg); chatMsgs(k0).forEach(function(x){ if(x.role==="user") x.pending=false; }); if(selectedKey!==k0&&state.unread.indexOf(k0)<0) state.unread.push(k0); persist(); renderChat(); toast("AI error: "+(e&&e.message?e.message:"Unknown error"));
 }
@@ -2218,8 +2218,8 @@ var liveTimer=null; var liveKey=null;
 function isLiveOn(k){ var l=(state.liveGroups||{})[k]; return !!(l&&l.on); }
 function isLiveEnabled(k){ var t=threadByKey(k); return !!(t&&t.kind==="group"&&!(state.liveOff&&state.liveOff[k])); }
 function leaveLive(){ if(liveTimer){ clearTimeout(liveTimer); liveTimer=null; } typingName=""; }
-function setLive(k,on){ if(!state.liveGroups) state.liveGroups={}; if(!state.liveOff) state.liveOff={}; if(on){ delete state.liveOff[k]; state.liveGroups[k]={on:true,turns:0}; } else { state.liveOff[k]=true; delete state.liveGroups[k]; } persist(); if(liveTimer){ clearTimeout(liveTimer); liveTimer=null; } liveKey=null; if(on){ liveKey=k; liveTimer=setTimeout(function(){ liveStep(k); },8000); } }
-function pokeLive(){ if(!selectedKey||!isLiveEnabled(selectedKey)||!isLiveOn(selectedKey)||liveTimer) return; var t=threadByKey(selectedKey); if(!t||t.kind!=="group") return; liveKey=selectedKey; liveTimer=setTimeout(function(){ liveStep(selectedKey); },8000); }
+function setLive(k,on){ if(!state.liveGroups) state.liveGroups={}; if(!state.liveOff) state.liveOff={}; if(on){ delete state.liveOff[k]; state.liveGroups[k]={on:true,turns:0}; } else { state.liveOff[k]=true; delete state.liveGroups[k]; } persist(); if(liveTimer){ clearTimeout(liveTimer); liveTimer=null; } liveKey=null; if(on){ liveKey=k; liveTimer=setTimeout(function(){ liveStep(k); },5000); } }
+function pokeLive(){ if(!selectedKey||!isLiveEnabled(selectedKey)||liveTimer) return; var t=threadByKey(selectedKey); if(!t||t.kind!=="group") return; if(!isLiveOn(selectedKey)){ if(!state.liveGroups) state.liveGroups={}; state.liveGroups[selectedKey]={on:true,turns:0}; persist(); } liveKey=selectedKey; liveTimer=setTimeout(function(){ liveStep(selectedKey); },5000); }
 function liveStep(k){
 liveTimer=null;
 var t=threadByKey(k);
@@ -2235,15 +2235,15 @@ typingName=sp[0]; renderChat();
 try{
 await new Promise(function(r){ setTimeout(r,3000+Math.floor(Math.random()*3000)); }); if(!isLiveOn(k)||selectedKey!==k){ typingName=""; renderChat(); return; }
 var hist=historyFor(k,12); var la=-1; for(var hi=0;hi<hist.length;hi++){ if(hist[hi].role==="assistant") la=hi; } if(la>=0&&la<hist.length-1) hist=hist.slice(0,la+1);
-var instr=prevs?("Continue the conversation between the characters naturally, in character, one short message. Do not quote or reply to any specific message; just say something that fits the conversation. You may address another character by name when it fits the topic. Do not address or answer the user; treat any user messages as background only."):"Start a conversation with the other members, in character, one short message.";
+var instr=prevs?("Continue the conversation between the characters naturally, in character, one short message. Stay on the current topic and react to what the others just said; do not start an unrelated topic out of nowhere. You may address another character by name or reply to what they said when it fits. Do not address or answer the user; treat any user messages as background only."):"Start a conversation with the other members, in character, one short message.";
 hist.push({role:"user",text:instr});
 var reply=await getAIReply(sp[0],sp[1],CANON[sp[0]]||"",groupMembersOf(t),hist);
 if(!isLiveOn(k)||selectedKey!==k){ typingName=""; renderChat(); return; }
 var nm={id:uid(),role:"assistant",speakerName:sp[0],speakerId:sp[0],text:reply,createdAt:Date.now()};
-chatMsgs(k).push(nm); if(prevs) charReact(prevs,sp[0],reply); state.recent=state.recent||{}; state.recent[k]=Date.now();
+if(prevs&&Math.random()<0.4){ nm.replyTo=prevs.text; nm.replyToId=prevs.id; nm.replyToName=prevs.speakerName; } chatMsgs(k).push(nm); if(prevs) charReact(prevs,sp[0],reply); state.recent=state.recent||{}; state.recent[k]=Date.now();
 lg.turns=(lg.turns||0)+1; persist(); renderChat(); renderSidebar();
 
-if((lg.turns||0)>=5){ delete state.liveGroups[k]; persist(); liveTimer=null; liveKey=null; } else { liveTimer=setTimeout(function(){ liveStep(k); },35000+Math.floor(Math.random()*25000)); }
+if((lg.turns||0)>=8){ delete state.liveGroups[k]; persist(); liveTimer=null; liveKey=null; } else { liveTimer=setTimeout(function(){ liveStep(k); },25000+Math.floor(Math.random()*20000)); }
 }catch(e){
 delete state.liveGroups[k]; persist(); if(liveTimer){ clearTimeout(liveTimer); liveTimer=null; } liveKey=null;
 }
@@ -2694,7 +2694,7 @@ function openHelpPage(){
 var html='<p>Cinegram is a chat app where you talk with AI role-played fictional film, series, anime and animation characters, in private chats and in multi-character groups. It is not connected to real Telegram and it is not a messenger for real people.</p>';
 html+='<h3>What works</h3><p style="color:var(--muted);font-size:14px">Character and group chats, replies, reactions, pins, saves, forwards, translation, edit and delete, media, voice and video recording, stickers, themes and wallpapers, chat folders, drafts, search in chats and across full history, multi-account on this device, and per-service AI fallback.</p>';
 html+='<h3>Honest limits</h3><p style="color:var(--muted);font-size:14px">Accounts, chats and settings live only in this browser and do not sync to other devices. Attached media does not survive a reload. Sign-in is a local demo: do not reuse a real password. There are no voice or video calls, no real contacts, no channels, no stories and no end-to-end encryption. AI replies come from the selected service (LiteRouter, GonkaRouter or FreeModel) through the app server, or from your own key in Settings.</p>';
-html+='<p style="color:var(--muted);font-size:13px">Cinegram · build 95</p>';
+html+='<p style="color:var(--muted);font-size:13px">Cinegram · build 96</p>';
 document.getElementById("modalRoot").innerHTML=subPage(tr("help"),html); wireSubPage();
 }
 function openAccountPage(){
