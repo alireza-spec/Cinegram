@@ -272,9 +272,14 @@ body[data-theme="graphite"]{--bg:#141518;--panel:#1d1f23;--panel2:#26292f;--line
 body[data-theme="silver"]{--bg:#e9eaee;--panel:#f5f5f7;--panel2:#ffffff;--line:#d4d4d8;--text:#26272b;--muted:#6e6e73;--blue:#5d6066;--bubble:#ffffff;--bubble-user:#d9d9de;--input:#ffffff;color-scheme:light}
 body[data-theme="slate"]{--bg:#12181d;--panel:#1a2229;--panel2:#222e37;--line:#2f3f4a;--text:#e2e8ec;--muted:#8fa0ab;--blue:#8fb4c7;--bubble:#1a2229;--bubble-user:#2f4250;--input:#222e37;color-scheme:dark}
 body[data-theme="ash"]{--bg:#1a1a1a;--panel:#242424;--panel2:#2e2e2e;--line:#3d3d3d;--text:#ececec;--muted:#a0a0a0;--blue:#c0c0c0;--bubble:#242424;--bubble-user:#3d3d3d;--input:#2e2e2e;color-scheme:dark}
+#splash{position:fixed;inset:0;z-index:9999;background:#1e1e1e;display:flex;align-items:center;justify-content:center;pointer-events:none;animation:splashHide 1.4s ease forwards}
+#splash img{width:120px;height:120px;border-radius:28px;box-shadow:0 12px 32px rgba(0,0,0,.45);animation:splashSnap 1.4s ease forwards}
+@keyframes splashSnap{0%{opacity:0;transform:scale(1.3)}12%{opacity:1;transform:scale(.97);box-shadow:0 0 44px rgba(255,255,255,.35),0 12px 32px rgba(0,0,0,.45)}22%{transform:scale(1.02);box-shadow:0 12px 32px rgba(0,0,0,.45)}32%{transform:scale(1)}70%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.96) translateY(-8px)}}
+@keyframes splashHide{0%{opacity:1}70%{opacity:1}100%{opacity:0;transform:translateY(-32px)}}
 </style>
 </head>
 <body data-theme="midnight">
+<div id="splash"><img src="icon-512.png" alt="Cinegram"></div>
 <div id="auth" style="display:none">
 <img src="icon-512.png" width="72" height="72" style="display:block;margin:0 auto 16px;border-radius:19px;box-shadow:0 8px 20px rgba(0,0,0,.3)">
 <h1>Cinegram</h1>
@@ -2450,7 +2455,7 @@ html+='<div class="setCard">';
 html+=setRow('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 9a2.7 2.7 0 0 1 5 1.4c0 1.6-2.3 1.8-2.3 3.1"/><path d="M12 17.5h.01" stroke-width="2.5"/></svg>',"#8fa3b5",tr("help"),tr("helpSub"),"setHelp");
 html+='<button class="setItem danger" id="setSignOut"><span class="ic" style="background:#e5484d"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v16h-6M3 12h10M13 9l3 3-3 3"/></svg></span><span class="ti"><b>'+tr("signOut")+'</b><small>'+tr("backToSignIn")+'</small></span></button>';
 html+='</div>';
-html+='<button class="ghost" style="width:100%;margin-top:14px" id="setClose">'+tr("close")+'</button></div></div>';
+html+='<button class="ghost" style="width:100%;margin-top:14px" id="setClose">'+tr("close")+'</button><p style="text-align:center;color:var(--muted);font-size:12px;margin-top:12px">Cinegram v1.0.0</p></div></div>';
 document.getElementById("modalRoot").innerHTML=html;
 document.getElementById("setClose").onclick=closeModal;
 document.getElementById("setPower").onchange=function(){ state.powerSaving=this.checked; persist(); applyThemeLang(); };
@@ -2694,7 +2699,7 @@ function openHelpPage(){
 var html='<p>Cinegram is a chat app where you talk with AI role-played fictional film, series, anime and animation characters, in private chats and in multi-character groups. It is not connected to real Telegram and it is not a messenger for real people.</p>';
 html+='<h3>What works</h3><p style="color:var(--muted);font-size:14px">Character and group chats, replies, reactions, pins, saves, forwards, translation, edit and delete, media, voice and video recording, stickers, themes and wallpapers, chat folders, drafts, search in chats and across full history, multi-account on this device, and per-service AI fallback.</p>';
 html+='<h3>Honest limits</h3><p style="color:var(--muted);font-size:14px">Accounts, chats and settings live only in this browser and do not sync to other devices. Attached media does not survive a reload. Sign-in is a local demo: do not reuse a real password. There are no voice or video calls, no real contacts, no channels, no stories and no end-to-end encryption. AI replies come from the selected service (LiteRouter, GonkaRouter or FreeModel) through the app server, or from your own key in Settings.</p>';
-html+='<p style="color:var(--muted);font-size:13px">Cinegram · build 96</p>';
+html+='<p style="color:var(--muted);font-size:13px">Cinegram · build 97</p>';
 document.getElementById("modalRoot").innerHTML=subPage(tr("help"),html); wireSubPage();
 }
 function openAccountPage(){
@@ -2878,6 +2883,7 @@ syncNav();
 document.addEventListener("keydown",function(e){ if(e.key==="Escape"){ closeCtx(); closeDropMenu(); } });
 if(me()){ showApp(); } else { showAuth(); }
 applyThemeLang();
+setTimeout(function(){ var s=document.getElementById("splash"); if(s) s.remove(); },1500);
 maybeLock();
 if("serviceWorker" in navigator){ try{ navigator.serviceWorker.register("sw.js"); }catch(e){} }
 </script>
