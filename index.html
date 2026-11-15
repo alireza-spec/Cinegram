@@ -97,7 +97,7 @@ input,textarea,select{font:inherit;background:var(--input);color:var(--text);bor
 #mentionBox{position:absolute;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;max-height:200px;overflow:auto;z-index:40}
 #mentionBox div{padding:7px;border-radius:8px;cursor:pointer}
 #mentionBox div:hover{background:var(--panel2)}
-#auth{max-width:400px;margin:8vh auto;padding:36px 30px 28px;background:var(--panel);border:1px solid var(--line);border-radius:20px;box-shadow:0 16px 48px rgba(0,0,0,.35)}
+#auth{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:calc(100% - 32px);max-width:400px;max-height:94vh;overflow:auto;margin:0;padding:36px 30px 28px;background:var(--panel);border:1px solid var(--line);border-radius:20px;box-shadow:0 16px 48px rgba(0,0,0,.35)}
 #authLogo{width:72px;height:72px;border-radius:50%;background:var(--blue);color:#fff;font-size:34px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 20px rgba(0,0,0,.3)}
 #auth h1{font-size:26px}
 #auth label{display:block;text-align:start;font-size:13px;color:var(--muted);margin:12px 0 6px}
@@ -105,7 +105,7 @@ input,textarea,select{font:inherit;background:var(--input);color:var(--text);bor
 #authGo{width:100%;margin-top:20px;background:var(--blue);color:#fff;border:0;border-radius:14px;padding:15px;font-size:16px;font-weight:700;transition:transform .12s ease} #authGo:active{transform:scale(.98)}
 .acctRow{display:flex;align-items:center;gap:10px;width:100%;margin-top:8px;text-align:start;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:8px 12px;color:var(--text);font-size:15px}
 .acctRow .avatar{width:36px;height:36px;font-size:14px}
-@media(max-width:760px){#auth{margin:4vh 16px;padding:30px 22px 26px}}
+@media(max-width:760px){#auth{padding:30px 22px 26px}}
 #auth h1{text-align:center;margin:0}
 .tabs{display:flex;gap:4px;background:var(--panel2);border-radius:12px;padding:4px;margin-bottom:18px}
 .tabs button{background:transparent;color:var(--muted);flex:1;padding:11px;border-radius:10px;font-size:15px}
@@ -2699,7 +2699,7 @@ function openHelpPage(){
 var html='<p>Cinegram is a chat app where you talk with AI role-played fictional film, series, anime and animation characters, in private chats and in multi-character groups. It is not connected to real Telegram and it is not a messenger for real people.</p>';
 html+='<h3>What works</h3><p style="color:var(--muted);font-size:14px">Character and group chats, replies, reactions, pins, saves, forwards, translation, edit and delete, media, voice and video recording, stickers, themes and wallpapers, chat folders, drafts, search in chats and across full history, multi-account on this device, and per-service AI fallback.</p>';
 html+='<h3>Honest limits</h3><p style="color:var(--muted);font-size:14px">Accounts, chats and settings live only in this browser and do not sync to other devices. Attached media does not survive a reload. Sign-in is a local demo: do not reuse a real password. There are no voice or video calls, no real contacts, no channels, no stories and no end-to-end encryption. AI replies come from the selected service (LiteRouter, GonkaRouter or FreeModel) through the app server, or from your own key in Settings.</p>';
-html+='<p style="color:var(--muted);font-size:13px">Cinegram · build 97</p>';
+html+='<p style="color:var(--muted);font-size:13px">Cinegram · build 98</p>';
 document.getElementById("modalRoot").innerHTML=subPage(tr("help"),html); wireSubPage();
 }
 function openAccountPage(){
