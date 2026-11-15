@@ -95,10 +95,10 @@ jobs:
           import os, re, shutil
           p = 'android/app/build.gradle'
           s = open(p).read()
-          s = re.sub(r'versionCode \d+', 'versionCode 2', s)
-          s = re.sub(r'versionName "[^"]*"', 'versionName "1.0.1"', s)
+          s = re.sub(r'versionCode \d+', 'versionCode 3', s)
+          s = re.sub(r'versionName "[^"]*"', 'versionName "1.0.2"', s)
           open(p, 'w').write(s)
-          print('versionCode 2' in s, 'versionName "1.0.1"' in s)
+          print('versionCode 3' in s, 'versionName "1.0.2"' in s)
           src = 'www/icons/icon-512.png'
           sizes = {'mipmap-mdpi': 48, 'mipmap-hdpi': 72, 'mipmap-xhdpi': 96, 'mipmap-xxhdpi': 144, 'mipmap-xxxhdpi': 192}
           try:
@@ -136,24 +136,24 @@ jobs:
           unzip -l $APK | grep -i launcher | head -20 || true
           AAPT=$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f 2>/dev/null | sort | tail -1)
           if [ -n "$AAPT" ]; then $AAPT dump badging $APK | grep -E "package:|application-label"; else echo "aapt2 not found, skipping badging check"; fi
-          cp $APK Cinegram-v1.0.1.apk
-          ls -lh Cinegram-v1.0.1.apk
+          cp $APK Cinegram-v1.0.2.apk
+          ls -lh Cinegram-v1.0.2.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Cinegram-v1.0.1
-          path: Cinegram-v1.0.1.apk
+          name: Cinegram-v1.0.2
+          path: Cinegram-v1.0.2.apk
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.1
-          name: Cinegram v1.0.1 (APK)
+          tag_name: v1.0.2
+          name: Cinegram v1.0.2 (APK)
           body: |
-            Cinegram Android APK, built from the web app in this repo (v1.0.1).
+            Cinegram Android APK, built from the web app in this repo (v1.0.2).
             The app itself is bundled inside the APK, so it opens without a VPN; chats and AI still need internet.
             Install by sideloading: allow "Install unknown apps" for your browser, then open the APK.
             This is a debug-signed APK for direct installation. It is not a Play Store release build.
             Your chats live in the browser — after installing, sign in again in the app, or export a backup from the browser (Settings → Data and Storage → Export) and import it in the app.
-          files: Cinegram-v1.0.1.apk
+          files: Cinegram-v1.0.2.apk
