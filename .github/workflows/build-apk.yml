@@ -31,11 +31,45 @@ jobs:
       - name: Prepare web assets
         run: |
           mkdir -p www/icons
-          cp index.html manifest.json sw.js www/
+          cp index.html manifest.json sw.js giphy-key.js icon-512.png icon-192.png apple-touch-icon.png www/
+          cp -r reaction-icons gif-pack stickers emoji www/
           cp icon-512.png www/icons/icon-512.png
-          ls www www/icons
+          ls www | head -20
           test -f www/index.html
           test -f www/icons/icon-512.png
+          test -d www/emoji
+
+      - name: Shrink bundled images
+        run: |
+          python3 -m pip install -q pillow || echo "pillow install failed, keeping originals"
+          python3 - << 'PY'
+          import os
+          targets = {'www/emoji': 96, 'www/reaction-icons': 96, 'www/stickers': 256}
+          try:
+              from PIL import Image
+          except Exception as e:
+              print('no PIL, keeping originals:', e)
+              raise SystemExit(0)
+          done = 0
+          skipped = 0
+          for root, px in targets.items():
+              for dp, dn, fn in os.walk(root):
+                  for f in fn:
+                      if not f.lower().endswith('.webp'):
+                          continue
+                      p = os.path.join(dp, f)
+                      try:
+                          im = Image.open(p)
+                          if max(im.size) <= px:
+                              continue
+                          im.thumbnail((px, px), Image.LANCZOS)
+                          im.save(p, 'WEBP', quality=80)
+                          done += 1
+                      except Exception as e:
+                          skipped += 1
+          print('resized', done, 'skipped', skipped)
+          PY
+          du -sh www
 
       - name: Init Capacitor project
         run: |
@@ -46,10 +80,6 @@ jobs:
             "appId": "com.cinegram.app",
             "appName": "Cinegram",
             "webDir": "www",
-            "server": {
-              "url": "https://alireza-spec.github.io/Cinegram/",
-              "androidScheme": "https"
-            },
             "android": {
               "allowMixedContent": true
             }
@@ -122,6 +152,7 @@ jobs:
           name: Cinegram v1.0.0 (APK)
           body: |
             Cinegram Android APK, built from the web app in this repo (v1.0.0).
+            The app itself is bundled inside the APK, so it opens without a VPN; chats and AI still need internet.
             Install by sideloading: allow "Install unknown apps" for your browser, then open the APK.
             This is a debug-signed APK for direct installation. It is not a Play Store release build.
             Your chats live in the browser — after installing, sign in again in the app, or export a backup from the browser (Settings → Data and Storage → Export) and import it in the app.
